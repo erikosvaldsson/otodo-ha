@@ -12,15 +12,13 @@ Each otodo project appears as a separate todo list entity in Home Assistant.
 
 ## Installation
 
-### HACS (recommended)
+### GPM (recommended)
 
-1. Open HACS in your Home Assistant instance
-2. Click the three-dot menu in the top right and select **Custom repositories**
-3. Add this repository URL with category **Integration**
-4. Search for **otodo** in HACS and install it
-5. Restart Home Assistant
-6. Go to **Settings > Devices & Services > Add Integration** and search for **otodo**
-7. Enter your otodo instance URL and an API key (create one from the otodo admin panel at `/admin`)
+1. Install [GPM](https://github.com/Greip-code/gpm) if you haven't already
+2. Run `gpm install gitlab.com/erik.osvaldsson/otodo-ha`
+3. Restart Home Assistant
+4. Go to **Settings > Devices & Services > Add Integration** and search for **otodo**
+5. Enter your otodo instance URL and an API key (create one from the otodo admin panel at `/admin`)
 
 ### Manual
 
