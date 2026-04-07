@@ -41,7 +41,6 @@ class OtodoTodoList(TodoListEntity):
         TodoListEntityFeature.CREATE_TODO_ITEM
         | TodoListEntityFeature.UPDATE_TODO_ITEM
         | TodoListEntityFeature.DELETE_TODO_ITEM
-        | TodoListEntityFeature.SET_DESCRIPTION
     )
 
     def __init__(self, api: OtodoAPI, project: dict, entry_id: str) -> None:
