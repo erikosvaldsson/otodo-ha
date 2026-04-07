@@ -1,0 +1,17 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to otodo",
+        "data": {
+          "url": "URL",
+          "api_key": "API Key"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Unable to connect to otodo instance",
+      "invalid_auth": "Invalid API key"
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "domain": "otodo",
+  "name": "otodo",
+  "codeowners": ["@erik.osvaldsson"],
+  "config_flow": true,
+  "documentation": "https://gitlab.com/erik.osvaldsson/otodo",
+  "integration_type": "hub",
+  "iot_class": "local_polling",
+  "version": "1.0.0",
+  "requirements": ["aiohttp"]
+}
