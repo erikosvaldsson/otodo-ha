@@ -9,6 +9,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import OtodoAPI
 from .const import CONF_API_KEY, CONF_URL, DOMAIN
+from . import todo as todo  # noqa: F401 - eager import to avoid blocking call in event loop
 
 PLATFORMS = [Platform.TODO]
 
