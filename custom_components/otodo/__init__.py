@@ -95,7 +95,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: OtodoConfigEntry) -> boo
     task = hass.async_create_background_task(
         _listen_sse(hass, api, coordinator), f"{DOMAIN}_sse"
     )
-    entry.async_on_unload(task.cancel)
+    entry.async_on_unload(lambda: task.cancel())
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
