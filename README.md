@@ -8,7 +8,11 @@ Each otodo project appears as a separate todo list entity in Home Assistant.
 
 - List, create, update, and delete todo items
 - Edit todo text from within Home Assistant
-- Each project is a separate todo list entity
+- Each project is a separate todo list entity; projects created later appear automatically
+- Live updates pushed from otodo, with polling as a fallback
+- HTTPS, including otodo's self-signed certificate (pinned by fingerprint)
+
+Requires Home Assistant 2025.3 or newer.
 
 ## Installation
 
@@ -41,5 +45,42 @@ Each otodo project appears as a separate todo list entity in Home Assistant.
 
 | Field | Description |
 |-------|-------------|
-| URL | Base URL of your otodo instance (e.g. `http://192.168.1.100:8080`) |
-| API Key | Bearer token from the otodo admin panel |
+| URL | Base URL of your otodo instance, e.g. `https://otodo.example.com` or `https://192.168.1.100:8080` |
+| API key | Bearer token from the otodo admin panel |
+| Verify SSL certificate | On by default. Turn off to accept a self-signed certificate without checking it |
+| Certificate fingerprint | Optional. Trust exactly this certificate (see below). Overrides *Verify SSL certificate* |
+
+To change any of these later, open the integration in **Settings > Devices & Services** and
+choose **Reconfigure**. Entities and their history are kept. If otodo rejects the API key,
+Home Assistant asks for a new one.
+
+### Connecting to otodo's self-signed certificate
+
+When otodo runs with `TLS_CERT`/`TLS_KEY` and generates its own certificate, browsers and
+Home Assistant cannot verify it. If Home Assistant reaches otodo through a reverse proxy
+with a real certificate, use that URL and nothing changes. To connect directly instead:
+
+1. Copy the fingerprint otodo logs at startup:
+   ```
+   TLS certificate SHA-256 fingerprint: 59:63:9A:D0:...
+   ```
+   (or run `openssl x509 -in cert.pem -noout -fingerprint -sha256`).
+2. Set the URL to `https://<host>:<port>` and paste the fingerprint into **Certificate fingerprint**.
+
+Home Assistant then trusts exactly that certificate. If it is ever regenerated, update the
+fingerprint via **Reconfigure**.
+
+If an existing setup used an `http://` URL and otodo has since switched to HTTPS, the
+integration stops loading and logs *"otodo is serving HTTPS; change the URL to https://"*.
+Fix it with **Reconfigure** as above.
+
+## Development
+
+```bash
+pip install -r requirements_test.txt
+pytest
+ruff check .
+```
+
+The tests run against the current Home Assistant release, including TLS checks against a
+real local HTTPS server.

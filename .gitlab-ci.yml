@@ -17,3 +17,19 @@ variables:
   SECRET_DETECTION_ENABLED: 'true'
 secret_detection:
   stage: secret-detection
+
+# Floating image on purpose: tests track the current Home Assistant release,
+# which needs a recent Python.
+pytest:
+  stage: test
+  image: python:3
+  script:
+    - pip install --quiet -r requirements_test.txt
+    - pytest
+
+ruff:
+  stage: test
+  image: python:3
+  script:
+    - pip install --quiet ruff
+    - ruff check .
