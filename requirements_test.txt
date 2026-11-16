@@ -1,0 +1,2 @@
+# Unpinned on purpose: CI tests against the current Home Assistant release.
+pytest-homeassistant-custom-component

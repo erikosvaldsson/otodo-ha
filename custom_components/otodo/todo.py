@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import logging
+from collections.abc import Awaitable
 
 from homeassistant.components.todo import (
     TodoItem,
@@ -10,31 +10,42 @@ from homeassistant.components.todo import (
     TodoListEntity,
     TodoListEntityFeature,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity, DataUpdateCoordinator
+from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .api import OtodoAPI
+from .api import OtodoAPI, OtodoError
+from .coordinator import OtodoConfigEntry, OtodoCoordinator
 
-_LOGGER = logging.getLogger(__name__)
+PARALLEL_UPDATES = 0  # all reads go through the coordinator
 
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    entry: OtodoConfigEntry,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     data = entry.runtime_data
-    async_add_entities(
-        [
-            OtodoTodoList(data.coordinator, data.api, project_id, entry.entry_id)
-            for project_id in data.coordinator.data
-        ],
-    )
+    coordinator = data.coordinator
+    known: set[int] = set()
+
+    @callback
+    def _add_new_projects() -> None:
+        """Add an entity for every project not seen yet, e.g. one created later."""
+        new = [pid for pid in coordinator.data if pid not in known]
+        if not new:
+            return
+        known.update(new)
+        async_add_entities(
+            OtodoTodoList(coordinator, data.api, pid, entry.entry_id) for pid in new
+        )
+
+    _add_new_projects()
+    entry.async_on_unload(coordinator.async_add_listener(_add_new_projects))
 
 
-class OtodoTodoList(CoordinatorEntity, TodoListEntity):
+class OtodoTodoList(CoordinatorEntity[OtodoCoordinator], TodoListEntity):
     """A single otodo project as a HA todo list."""
 
     _attr_has_entity_name = True
@@ -46,7 +57,7 @@ class OtodoTodoList(CoordinatorEntity, TodoListEntity):
 
     def __init__(
         self,
-        coordinator: DataUpdateCoordinator[dict[int, dict]],
+        coordinator: OtodoCoordinator,
         api: OtodoAPI,
         project_id: int,
         entry_id: str,
@@ -54,12 +65,20 @@ class OtodoTodoList(CoordinatorEntity, TodoListEntity):
         super().__init__(coordinator)
         self._api = api
         self._project_id = project_id
-        self._attr_name = coordinator.data[project_id]["name"]
         self._attr_unique_id = f"{entry_id}_{project_id}"
-        self._update_items()
+        self._update_from_data()
 
-    def _update_items(self) -> None:
-        project_data = self.coordinator.data.get(self._project_id, {})
+    @property
+    def available(self) -> bool:
+        # A project deleted in otodo drops out of the data; show it as
+        # unavailable rather than as an empty list.
+        return super().available and self._project_id in self.coordinator.data
+
+    def _update_from_data(self) -> None:
+        project = self.coordinator.data.get(self._project_id)
+        if project is None:
+            return
+        self._attr_name = project["name"]  # follows renames
         self._attr_todo_items = [
             TodoItem(
                 uid=str(t["id"]),
@@ -68,26 +87,34 @@ class OtodoTodoList(CoordinatorEntity, TodoListEntity):
                     TodoItemStatus.COMPLETED if t["done"] else TodoItemStatus.NEEDS_ACTION
                 ),
             )
-            for t in project_data.get("todos", [])
+            for t in project["todos"]
         ]
 
     @callback
     def _handle_coordinator_update(self) -> None:
-        self._update_items()
-        self.async_write_ha_state()
+        self._update_from_data()
+        super()._handle_coordinator_update()
+
+    async def _call(self, action: Awaitable) -> None:
+        """Run an API call and refresh, reporting failures to the user."""
+        try:
+            await action
+        except OtodoError as err:
+            raise HomeAssistantError(f"otodo: {err}") from err
+        await self.coordinator.async_request_refresh()
 
     async def async_create_todo_item(self, item: TodoItem) -> None:
-        await self._api.create_todo(self._project_id, item.summary)
-        await self.coordinator.async_request_refresh()
+        await self._call(self._api.create_todo(self._project_id, item.summary or ""))
 
     async def async_update_todo_item(self, item: TodoItem) -> None:
-        todo_id = int(item.uid)
         done = item.status == TodoItemStatus.COMPLETED if item.status else None
-        text = item.summary or None
-        await self._api.update_todo(todo_id, done=done, text=text)
-        await self.coordinator.async_request_refresh()
+        await self._call(
+            self._api.update_todo(int(item.uid), done=done, text=item.summary or None)
+        )
 
     async def async_delete_todo_items(self, uids: list[str]) -> None:
-        for uid in uids:
-            await self._api.delete_todo(int(uid))
-        await self.coordinator.async_request_refresh()
+        async def delete_all() -> None:
+            for uid in uids:
+                await self._api.delete_todo(int(uid))
+
+        await self._call(delete_all())

@@ -5,13 +5,54 @@
         "title": "Connect to otodo",
         "data": {
           "url": "URL",
-          "api_key": "API Key"
+          "api_key": "API key",
+          "verify_ssl": "Verify SSL certificate",
+          "fingerprint": "Certificate fingerprint (SHA-256)"
+        },
+        "data_description": {
+          "url": "Base URL of your otodo instance, e.g. https://otodo.example.com or https://192.168.1.10:8080.",
+          "api_key": "Create one in otodo's admin panel at /admin.",
+          "verify_ssl": "Turn off to accept a self-signed certificate without checking it. Pinning its fingerprint below is safer.",
+          "fingerprint": "Optional. Trust exactly this certificate, e.g. otodo's self-signed one. otodo logs it at startup as \"TLS certificate SHA-256 fingerprint\". Overrides SSL verification."
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure otodo",
+        "data": {
+          "url": "URL",
+          "api_key": "API key",
+          "verify_ssl": "Verify SSL certificate",
+          "fingerprint": "Certificate fingerprint (SHA-256)"
+        },
+        "data_description": {
+          "url": "Base URL of your otodo instance, e.g. https://otodo.example.com or https://192.168.1.10:8080.",
+          "api_key": "Create one in otodo's admin panel at /admin.",
+          "verify_ssl": "Turn off to accept a self-signed certificate without checking it. Pinning its fingerprint below is safer.",
+          "fingerprint": "Optional. Trust exactly this certificate, e.g. otodo's self-signed one. otodo logs it at startup as \"TLS certificate SHA-256 fingerprint\". Overrides SSL verification."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Reauthenticate otodo",
+        "description": "otodo at {url} rejected the API key. Enter a new one from its admin panel.",
+        "data": {
+          "api_key": "API key"
         }
       }
     },
     "error": {
-      "cannot_connect": "Unable to connect to otodo instance",
-      "invalid_auth": "Invalid API key"
+      "cannot_connect": "Unable to connect to the otodo instance.",
+      "invalid_auth": "Invalid API key.",
+      "https_required": "otodo is serving HTTPS. Change the URL to start with https://.",
+      "certificate_untrusted": "The server's certificate could not be verified. For otodo's self-signed certificate, enter its fingerprint or turn off SSL verification.",
+      "fingerprint_mismatch": "The server's certificate does not match this fingerprint.",
+      "invalid_fingerprint": "Enter a SHA-256 fingerprint: 64 hex digits, colons optional.",
+      "tls_handshake": "The TLS handshake failed. If otodo is serving plain HTTP, use an http:// URL.",
+      "unknown": "Unexpected error."
+    },
+    "abort": {
+      "already_configured": "This otodo instance is already configured.",
+      "reauth_successful": "Reauthentication was successful.",
+      "reconfigure_successful": "Reconfiguration was successful."
     }
   }
 }
