@@ -9,5 +9,5 @@
   "integration_type": "service",
   "iot_class": "local_push",
   "issue_tracker": "https://gitlab.com/erik.osvaldsson/otodo-ha/-/issues",
-  "version": "1.1.0"
+  "version": "1.1.1"
 }
